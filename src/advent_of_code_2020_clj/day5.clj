@@ -41,10 +41,21 @@
         col (calc-col pass)]
     (+ (* row 8) col)))
 
-(defn output []
+(defn calc-part1 []
   (let [passes (parse-passes (read-input))
         ids (map calc-seat-id passes)]
     (apply max ids)))
+
+(defn find-seat [seat-ids]
+  (loop [seat-ids seat-ids]
+    (if (> (- (second seat-ids) (first seat-ids)) 1)
+      (+ 1 (first seat-ids))
+      (recur (drop 1 seat-ids)))))
+
+(defn output []
+  (let [passes (parse-passes (read-input))
+        ids (map calc-seat-id passes)]
+    (find-seat (sort ids))))
 
 (comment
   (def pass "FFFBBBFRRR")
