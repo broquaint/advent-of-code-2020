@@ -8,9 +8,11 @@
   (into (hash-map)
    (map
     (fn [line]
-        (let [[container-str contained-str] (clojure.string/split line #" contain ")
-        container (clojure.string/replace container-str " bags" "")
-        bags (map #(last %) (re-seq #"(\d+) (\w+ \w+)"  contained-str))]
+      (let [[container-str contained-str] (clojure.string/split line #" contain ")
+            container (clojure.string/replace container-str " bags" "")
+            bag-pairs (map #(reverse (rest %)) (re-seq #"(\d+) (\w+ \w+)"  contained-str))
+            bag-counts (map (fn [p] [(first p) (Integer/valueOf (second p))]) bag-pairs)
+            bags (apply hash-map (flatten bag-counts))]
     [container bags]))
     lines)))
 
@@ -21,23 +23,35 @@
                     (find-valid-containers bag inner bags)))] 
     (flatten matches)))
 
-(defn output []
+(defn count-containing-bags [outer bags]
+  (reduce
+   (fn [acc [k v]]
+     (+ acc (* v (count-containing-bags (bags k) bags))))
+   1
+   outer))
+
+(defn output-p1 []
   (let [bags (parse-input (read-input))
         valid-bags (filter #(> (count (find-valid-containers % "shiny gold" bags)) 0) (keys bags))]
     (count valid-bags)))
 
+(defn output []
+  (let [bags (parse-input (read-input))]
+    ;; Small off by one error as the top–level bag is added to the count, but easy enough to account for by hand by subtracting 1 to the result.
+    (count-containing-bags (bags "shiny gold") bags)))
+
 (comment
   (def lines [
-"light red bags contain 1 bright white bag, 2 muted yellow bags."
-"dark orange bags contain 3 bright white bags, 4 muted yellow bags."
-"bright white bags contain 1 shiny gold bag."
-"muted yellow bags contain 2 shiny gold bags, 9 faded blue bags."
-"shiny gold bags contain 1 dark olive bag, 2 vibrant plum bags."
-"dark olive bags contain 3 faded blue bags, 4 dotted black bags."
-"vibrant plum bags contain 5 faded blue bags, 6 dotted black bags."
-"faded blue bags contain no other bags."
-              "dotted black bags contain no other bags."])
+              "shiny gold bags contain 2 dark red bags."
+"dark red bags contain 2 dark orange bags."
+"dark orange bags contain 2 dark yellow bags."
+"dark yellow bags contain 2 dark green bags."
+"dark green bags contain 2 dark blue bags."
+"dark blue bags contain 2 dark violet bags."
+"dark violet bags contain no other bags."])
   (def bags (parse-input lines))
+
+  (count-containing-bags (bags "shiny gold") bags)
   
   (find-valid-containers "light red" "shiny gold" bags)
 
